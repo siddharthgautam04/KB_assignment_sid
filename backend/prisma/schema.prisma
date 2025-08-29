@@ -1,0 +1,59 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  employeeId   String?   @unique
+  username     String?   @unique
+  passwordHash String?
+  role         Role      @default(USER)
+  bookings     Booking[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([role])
+}
+
+model Resource {
+  id          String    @id @default(cuid())
+  name        String
+  ip          String    @unique
+  type        String?
+  status      String? // "up" | "down" | "unknown"
+  description String?
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Booking {
+  id         String   @id @default(cuid())
+  resourceId String
+  userId     String
+  start      DateTime
+  end        DateTime
+  purpose    String?
+  createdAt  DateTime @default(now())
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, start, end])
+  @@index([userId, start, end])
+}
